@@ -2,6 +2,7 @@ package pkgPoker.app.controller;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -26,6 +27,7 @@ import pkgPokerEnum.eAction;
 import pkgPokerEnum.eGame;
 import pkgPokerBLL.Action;
 import pkgPokerBLL.GamePlay;
+import pkgPokerBLL.Player;
 import pkgPokerBLL.Table;
 
 public class PokerTableController implements Initializable {
@@ -45,6 +47,9 @@ public class PokerTableController implements Initializable {
 	private Label lblPlayerPos1;
 	@FXML
 	private Label lblPlayerPos2;
+
+	@FXML
+	private Label dishPlayer;
 
 	@FXML
 	private ImageView imgViewDealerButtonPos1;
@@ -103,15 +108,30 @@ public class PokerTableController implements Initializable {
 
 	//TODO: Lab #4 - Complete (fix) setiPlayerPosition
 	public void btnSitLeave_Click(ActionEvent event) {
-
-		// Set the PlayerPosition in the Player
-		mainApp.getPlayer().setiPlayerPosition(1);
-
-		// Build an Action message
-		Action act = new Action(eAction.Sit, mainApp.getPlayer());
+		Action action = null;
+		Button btn = (Button)event.getSource();
+		if(btn.equals(btnPos1SitLeave)){
+			if (mainApp.getPlayer().getiPlayerPosition() == 1){
+				action = new Action(eAction.Leave, mainApp.getPlayer());
+			}
+			else{
+				action = new Action(eAction.Sit, mainApp.getPlayer());
+				mainApp.getPlayer().setiPlayerPosition(1);
+			}		
+			
+		}
+		else if(btn.equals(btnPos2SitLeave)){
+			if (mainApp.getPlayer().getiPlayerPosition() == 2){
+				action = new Action(eAction.Leave, mainApp.getPlayer());
+			}
+			else{
+				action = new Action(eAction.Sit, mainApp.getPlayer());
+				mainApp.getPlayer().setiPlayerPosition(2);
+			}			
+		}
 
 		// Send the Action to the Hub
-		mainApp.messageSend(act);
+		mainApp.messageSend(action);
 	}
 
 	public void MessageFromMainApp(String strMessage) {
@@ -157,7 +177,26 @@ public class PokerTableController implements Initializable {
 
 	//TODO: Lab #4 Complete the implementation
 	public void Handle_TableState(Table HubPokerTable) {
-
+		HashMap<UUID, Player> playerList = HubPokerTable.GetTablePlayers();
+		for(int i = 1; i <= 2; i++){ //Number of positions
+			for(int j = 0; j < playerList.size(); j++)
+				if(playerList.get(j).getiPlayerPosition() == i){
+					lblPos1Name.setText(playerList.get(j).getPlayerName());
+					if(mainApp.getPlayer().getPlayerID().equals(playerList.get(j).getPlayerID())){
+						if(i == 1)
+							btnPos1SitLeave.setText("Leave");
+						else if(i == 2)
+							btnPos2SitLeave.setText("Leave");
+					}
+					else{
+						if(i == 1)
+							lblPlayerPos1.setText("-Taken-");
+						else if(i == 2)
+							lblPlayerPos2.setText("-Taken-");
+					}
+					i = 3; //Number of positions + 1
+				}
+		}
 	}
 
 	public void Handle_GameState(GamePlay HubPokerGame) {
